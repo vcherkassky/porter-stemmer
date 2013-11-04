@@ -1,13 +1,19 @@
+.DS_Store
 *.class
-*.log
 
-# sbt specific
-dist/*
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# eclipse #
+.classpath
+.project
+.settings/
+
+# maven #
 target/
-lib_managed/
-src_managed/
-project/boot/
-project/plugins/project/
 
-# Scala-IDE specific
-.scala_dependencies
+# sbt #
+build/
+.cache
