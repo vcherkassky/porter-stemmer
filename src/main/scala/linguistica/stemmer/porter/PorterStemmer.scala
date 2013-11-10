@@ -7,16 +7,17 @@ trait PorterStemmer {
 
   def measure(word: String): Int = {
     def countM(p: (Int, Char), cur: Char): (Int, Char) = {
-      val (m, prev) = p
+      val (m, prevType) = p
       cur match {
-        case 'A' | 'O' | 'U' | 'I' | 'E' => (m, 'v')
-        case 'Y' => prev match {
-          case '0' => (m, 'c')
-          case 'v' => (m + 1, 'c')
+        case 'A' | 'O' | 'U' | 'I' | 'E' => (m, 'v') // 'v' as prevType means 'vowel'
+        case 'Y' => prevType match {
+          case '0' => (m, 'c') 		// 'c' as prevType means 'consonant'
+        		  					// '0' is for 'no value yet'
+          case 'v' => (m + 1, 'c') 	// count m for consonant after vowel combinations 
           case 'c' => (m, 'v')
           case _ => (m + 1, 'c')
         }
-        case _ => prev match {
+        case _ => prevType match {
           case 'v' => (m + 1, 'c')
           case _ => (m, 'c')
         }
