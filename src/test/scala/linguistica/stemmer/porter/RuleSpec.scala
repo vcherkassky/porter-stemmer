@@ -8,23 +8,23 @@ class RuleSpec extends FunSuite with PorterStemmer {
   
   test("test that result of stem and apply is right") {
     val sses = Rule("SSES", "SS")
-    assert(sses.stem("CARESSES") === Some("CARE"))
-    assert(sses.apply("CARESSES") === Some("CARESS"))
+    assert(sses.stem(Word("CARESSES")) === Some(Word("CARE")))
+    assert(sses(Word("CARESSES")) === Some(Word("CARESS")))
     
     val ies = Rule("IES", "I")
-    assert(ies.stem("PONIES") === Some("PON"))
-    assert(ies.apply("PONIES") === Some("PONI"))
-    assert(ies.stem("TIES") === Some("T"))
-    assert(ies.apply("TIES") === Some("TI"))
+    assert(ies.stem(Word("PONIES")) === Some(Word("PON")))
+    assert(ies(Word("PONIES")) === Some(Word("PONI")))
+    assert(ies.stem(Word("TIES")) === Some(Word("T")))
+    assert(ies(Word("TIES")) === Some(Word("TI")))
     
     val ss = Rule("SS", "SS")
-    assert(ss.stem("CARESS") === Some("CARE"))
-    assert(ss.apply("CARESS") === Some("CARESS"))
+    assert(ss.stem(Word("CARESS")) === Some(Word("CARE")))
+    assert(ss(Word("CARESS")) === Some(Word("CARESS")))
   }
   
   test("test that stem or apply return None for unmatched suffix") {
     val sses = Rule("SSES", "SS")
-    assert(sses.stem("CONSES") === None)
-    assert(sses.apply("CONSES") === None)
+    assert(sses.stem(Word("CONSES")) === None)
+    assert(sses.apply(Word("CONSES")) === None)
   }
 }

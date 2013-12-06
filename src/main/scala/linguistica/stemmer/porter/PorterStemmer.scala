@@ -7,44 +7,73 @@ import scala.collection.immutable.StringOps
  */
 trait PorterStemmer {
 
-  type Word = String
-  type Stem = String
+  object LetterType extends Enumeration {
+    type LetterType = Value
+    val Vowel, Consonant = Value
+  }
+  import LetterType._
 
-//  def precompute(word: Word): List[]
-  
-  def measure(word: Word): Int = {
-    def countM(p: (Int, Char), cur: Char): (Int, Char) = {
-      val (m, prevType) = p
-      cur match {
-        case 'A' | 'O' | 'U' | 'I' | 'E' => (m, 'v') // 'v' as prevType means 'vowel'
-        case 'Y' => prevType match {
-          case '0' => (m, 'c') // 'c' as prevType means 'consonant'
-          // '0' is for 'no value yet'
-          case 'v' => (m + 1, 'c') // count m for consonant after vowel combinations 
-          case 'c' => (m, 'v')
-          case _ => (m + 1, 'c')
-        }
-        case _ => prevType match {
-          case 'v' => (m + 1, 'c')
-          case _ => (m, 'c')
-        }
-      }
-    }
-    val result: (Int, Char) = word.foldLeft((0, '0'))(countM)
-    result._1
+  case class Word(val text: String, val measure: Int, val letters: List[(Char, LetterType)]) {
+    def stem(suffix: String): Option[Word] = Word.stem(this, suffix)
   }
 
-  class Rule(suffix: String, replacement: String, condition: String => Boolean) {
-    def stem(word: Word): Option[Stem] = {
-      if (word.endsWith(suffix))
-        Some(word.dropRight(suffix.length))
+  object Word {
+    
+    def apply(word: String): Word = {
+      val letters = precompute(word)
+      new Word(word, measure(letters.map(_._2)), letters)
+    }
+    
+    def stem(word: Word, suffix: String): Option[Word] = {
+      if (word.text.endsWith(suffix)) {
+        val letters = word.letters.dropRight(suffix.length)
+        val stem = word.text.dropRight(suffix.length)
+        Some(new Word(stem, measure(letters.map(_._2)), letters))
+      } 
       else
         None
     }
+  }
+
+  def precompute(word: String): List[(Char, LetterType)] = {
+    var prev: Char = '0'
+    var result = List[(Char, LetterType)]()
+    for (cur <- word) {
+      val pair = cur match {
+        case 'A' | 'O' | 'U' | 'I' | 'E' => (cur, Vowel)
+        case 'Y' => prev match {
+          case '0' => (cur, Consonant)
+          case 'A' | 'O' | 'U' | 'I' | 'E' => (cur, Consonant)
+          case _ => (cur, Vowel)
+        }
+        case _ => (cur, Consonant)
+      }
+      result = pair :: result
+      prev = cur
+    }
+    result.reverse
+  }
+
+  /**
+   * measure is m in [C](VC)^m^[V]
+   */
+  private def measure(letters: Seq[LetterType]): Int = {
+    var prev = letters.head
+    var m = 0
+    for (cur <- letters.tail) {
+      if (prev == Vowel && cur == Consonant)
+        m = m + 1
+      prev = cur
+    }
+    m
+  }
+
+  class Rule(suffix: String, replacement: String, condition: Word => Boolean) {
+    def stem(word: Word): Option[Word] = word.stem(suffix)
     def apply(word: Word): Option[Word] = stem(word) match {
       case Some(stem) =>
         if (condition(stem))
-          if (replacement != null) Some(stem + replacement)
+          if (replacement != null) Some(Word(stem.text + replacement))
           else Some(stem)
         else None
       case None => None
@@ -52,31 +81,21 @@ trait PorterStemmer {
   }
 
   object Condition {
-    def any(stem: Stem): Boolean = true
-    def endsWith(ending: String)(stem: Stem): Boolean = stem.endsWith(ending)
-    def containsVowel(stem: Stem): Boolean = {
-      val hasPureVowel = stem.exists(isPureVowel)
-      val indexOfY = stem.indexOf("Y")
-      val consonantBeforeY = indexOfY > 0 && !isPureVowel(stem.charAt(indexOfY - 1)) // Y is a vowel after a consonant
-      hasPureVowel && consonantBeforeY
-    }
-    def endsDoubleConsonant(stem: Stem): Boolean = {
+    def any(stem: Word): Boolean = true
+    def endsWith(ending: String)(stem: Word): Boolean = stem.text.endsWith(ending)
+    def containsVowel(stem: Word): Boolean = stem.letters.exists(_._2 == Vowel)
+    def endsDoubleConsonant(stem: String): Boolean = {
       if (stem.length() < 2) false
       else {
         val end = stem.takeRight(2)
         end.head == end.tail.head
       }
     }
-    
-    private def isPureVowel(c: Char) = c match {
-      case 'A' | 'O' | 'U' | 'I' | 'E' => true
-      case _ => false
-    }
   }
 
   object Rule {
-    def apply(suffix: String, replacement: String, condition: String => Boolean): Rule =
+    def apply(suffix: String, replacement: String, condition: Word => Boolean): Rule =
       new Rule(suffix, replacement, condition)
-    def apply(suffix: String, replacement: String): Rule = new Rule(suffix, replacement, Condition.any)
+    def apply(suffix: String, replacement: String) = new Rule(suffix, replacement, Condition.any)
   }
 }
