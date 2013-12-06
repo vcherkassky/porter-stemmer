@@ -11,5 +11,8 @@ class PrecomputeSpec extends FunSuite with PorterStemmer {
   test("test that precompute returns everything right") {
     assert(precompute("TR") === List(('T', Consonant), ('R', Consonant)))
     assert(precompute("TREE") === List(('T', Consonant), ('R', Consonant), ('E', Vowel), ('E', Vowel)))
+    assert(precompute("YEL") === List(('Y', Consonant), ('E', Vowel), ('L', Consonant)))
+    assert(precompute("HEY") === List(('H', Consonant), ('E', Vowel), ('Y', Consonant)))
+    assert(precompute("BY") === List(('B', Consonant), ('Y', Vowel)))
   }
 }
