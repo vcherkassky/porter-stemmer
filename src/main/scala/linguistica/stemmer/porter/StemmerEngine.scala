@@ -1,6 +1,6 @@
 package linguistica.stemmer.porter
 
-trait StemmerEngine extends PorterStemmer {
+trait StemmerEngine extends PorterStemmer with Stemmer {
 
   import Condition._
 
