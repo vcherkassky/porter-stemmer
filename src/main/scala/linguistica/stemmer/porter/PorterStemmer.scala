@@ -31,44 +31,49 @@ trait PorterStemmer {
         Some(new Word(stem, measure(letters.map(_._2)), letters))
       } else None
     }
-  }
 
-  def precompute(word: String): List[(Char, LetterType)] = {
-    var prev: Char = '0'
-    var result = List[(Char, LetterType)]()
-    for (cur <- word) {
-      val pair = cur match {
-        case 'A' | 'O' | 'U' | 'I' | 'E' => (cur, Vowel)
-        case 'Y' => prev match {
-          case '0' => (cur, Consonant)
-          case 'A' | 'O' | 'U' | 'I' | 'E' => (cur, Consonant)
-          case _ => (cur, Vowel)
+    private def precompute(word: String): List[(Char, LetterType)] = {
+      var prev: Char = '0'
+      var result = List[(Char, LetterType)]()
+      for (cur <- word) {
+        val pair = cur match {
+          case 'A' | 'O' | 'U' | 'I' | 'E' => (cur, Vowel)
+          case 'Y' => prev match {
+            case '0' => (cur, Consonant)
+            case 'A' | 'O' | 'U' | 'I' | 'E' => (cur, Consonant)
+            case _ => (cur, Vowel)
+          }
+          case _ => (cur, Consonant)
         }
-        case _ => (cur, Consonant)
+        result = pair :: result
+        prev = cur
       }
-      result = pair :: result
-      prev = cur
+      result.reverse
     }
-    result.reverse
-  }
 
-  /**
-   * measure is m in [C](VC)^m^[V]
-   */
-  private def measure(letters: Seq[LetterType]): Int = {
-    var prev = letters.head
-    var m = 0
-    for (cur <- letters.tail) {
-      if (prev == Vowel && cur == Consonant)
-        m = m + 1
-      prev = cur
+    /**
+     * measure is m in [C](VC)^m^[V]
+     */
+    private def measure(letters: Seq[LetterType]): Int = {
+      var prev = letters.head
+      var m = 0
+      for (cur <- letters.tail) {
+        if (prev == Vowel && cur == Consonant)
+          m = m + 1
+        prev = cur
+      }
+      m
     }
-    m
   }
 
   type Rule = Function[Word, Option[Word]]
-  
-  class SimpleRule(suffix: String, replacement: String, condition: Word => Boolean) extends Rule {
+
+  case class SimpleRule(suffix: String, replacement: String, condition: Word => Boolean) extends Rule {
+    
+    if(suffix.exists(Character.isLowerCase))
+      throw new IllegalArgumentException(s"suffix should be uppercase, but was $suffix")
+    if(replacement.exists(Character.isLowerCase))
+      throw new IllegalArgumentException(s"replacement should be uppercase, but was $replacement")
 
     def stem(word: Word): Option[Word] = word.stem(suffix)
 
@@ -107,7 +112,7 @@ trait PorterStemmer {
         }
       }
     }
-    
+
     def endCharIn(chars: String)(stem: Word): Boolean = chars.contains(stem.text takeRight 1)
 
     def measureIs(p: Int => Boolean)(stem: Word): Boolean = p(stem.measure)
@@ -115,8 +120,8 @@ trait PorterStemmer {
     @inline def and(conditions: (Word => Boolean)*)(stem: Word): Boolean = conditions.find(condition => !condition(stem)) == None
 
     @inline def or(conditions: (Word => Boolean)*)(stem: Word): Boolean = conditions.exists(condition => condition(stem))
-    
-    @inline def not(condition: Word => Boolean)(stem: Word): Boolean = !condition(stem) 
+
+    @inline def not(condition: Word => Boolean)(stem: Word): Boolean = !condition(stem)
   }
 
   object Rule {
@@ -125,11 +130,11 @@ trait PorterStemmer {
       new SimpleRule(suffix, replacement, condition)
 
     def apply(suffix: String, replacement: String): SimpleRule = new SimpleRule(suffix, replacement, Condition.any)
-    
-    def doubleToSingle(condition: Word => Boolean): Rule = word =>  
-      if(Condition.endsDoubleConsonant(word) && condition(word))
+
+    def doubleToSingle(condition: Word => Boolean): Rule = word =>
+      if (Condition.endsDoubleConsonant(word) && condition(word))
         Some(Word(word.text dropRight 1))
-      else 
+      else
         None
   }
 }
