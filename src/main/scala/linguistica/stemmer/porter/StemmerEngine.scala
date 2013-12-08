@@ -84,7 +84,6 @@ trait StemmerEngine extends PorterStemmer {
   val step5b = List(Rule.doubleToSingle(and(measureIs(_ > 1), endsWith("L"))))
 
   def applyRules(word: Word, rules: List[Rule]): Option[Word] = {
-    
     def loop(word: Word, prev: Option[Word], rules: List[Rule]): Option[Word] = rules match {
       case Nil => prev
       case r :: rs => prev match {
@@ -101,21 +100,25 @@ trait StemmerEngine extends PorterStemmer {
   }
 
   def stem(word: String): String = {
+    try {
+      var w = Word(word)
+      w = applyStep(w, step1a)
+      w = applyStep(w, step1b_simple)
+      w = applyRules(w, step1b_complex_first) match {
+        case None => w
+        case Some(wrd) => applyStep(wrd, step1b_complex_second)
+      }
+      w = applyStep(w, step1c)
+      w = applyStep(w, step2)
+      w = applyStep(w, step3)
+      w = applyStep(w, step4)
+      w = applyStep(w, step5a)
+      w = applyStep(w, step5b)
 
-    var w = Word(word)
-    w = applyStep(w, step1a)
-    w = applyStep(w, step1b_simple)
-    w = applyRules(w, step1b_complex_first) match {
-      case None => w
-      case Some(wrd) => applyStep(wrd, step1b_complex_second)
+      w.text
+    } catch {
+      case t: Throwable => System.err.println(s"Could not process '$word', ${t.getMessage}")
+      word
     }
-    w = applyStep(w, step1c)
-    w = applyStep(w, step2)
-    w = applyStep(w, step3)
-    w = applyStep(w, step4)
-    w = applyStep(w, step5a)
-    w = applyStep(w, step5b)
-
-    w.text
   }
 }

@@ -10,6 +10,7 @@
 .classpath
 .project
 .settings/
+.worksheet/
 
 # maven #
 target/

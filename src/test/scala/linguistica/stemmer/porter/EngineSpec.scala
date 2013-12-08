@@ -31,4 +31,10 @@ class EngineSpec extends FunSuite with StemmerEngine {
     assert(applyStep1b("FAILING") === "FAIL")
     assert(applyStep1b("FILING") === "FILE")
   }
+  
+  test("test engine does not fail on non-words") {
+    assert(stem("S") === "S")
+    assert(stem("1954") === "1954")
+    assert(stem("AT&T") === "AT&T")
+  }
 }
