@@ -29,8 +29,7 @@ trait PorterStemmer {
         val letters = word.letters.dropRight(suffix.length)
         val stem = word.text.dropRight(suffix.length)
         Some(new Word(stem, measure(letters.map(_._2)), letters))
-      } 
-      else None
+      } else None
     }
   }
 
@@ -67,7 +66,9 @@ trait PorterStemmer {
     m
   }
 
-  class Rule(suffix: String, replacement: String, condition: Word => Boolean) {
+  type Rule = Function[Word, Option[Word]]
+  
+  class SimpleRule(suffix: String, replacement: String, condition: Word => Boolean) extends Rule {
 
     def stem(word: Word): Option[Word] = word.stem(suffix)
 
@@ -96,18 +97,39 @@ trait PorterStemmer {
       }
     }
 
-    def meauseIs(p: Int => Boolean)(stem: Word): Boolean = p(stem.measure)
+    def endsCvcNotWxy(stem: Word): Boolean = {
+      if (stem.text.length < 3 || endCharIn("WXY")(stem))
+        false
+      else {
+        stem.letters.takeRight(3).map(_._2) match {
+          case List(Consonant, Vowel, Consonant) => true
+          case _ => false
+        }
+      }
+    }
+    
+    def endCharIn(chars: String)(stem: Word): Boolean = chars.contains(stem.text takeRight 1)
 
-    def and(conditions: (Word => Boolean)*)(stem: Word): Boolean = conditions.find(condition => !condition(stem)) == None
+    def measureIs(p: Int => Boolean)(stem: Word): Boolean = p(stem.measure)
 
-    def or(conditions: (Word => Boolean)*)(stem: Word): Boolean = conditions.exists(condition => condition(stem))
+    @inline def and(conditions: (Word => Boolean)*)(stem: Word): Boolean = conditions.find(condition => !condition(stem)) == None
+
+    @inline def or(conditions: (Word => Boolean)*)(stem: Word): Boolean = conditions.exists(condition => condition(stem))
+    
+    @inline def not(condition: Word => Boolean)(stem: Word): Boolean = !condition(stem) 
   }
 
   object Rule {
 
-    def apply(suffix: String, replacement: String, condition: Word => Boolean): Rule =
-      new Rule(suffix, replacement, condition)
+    def apply(suffix: String, replacement: String, condition: Word => Boolean): SimpleRule =
+      new SimpleRule(suffix, replacement, condition)
 
-    def apply(suffix: String, replacement: String) = new Rule(suffix, replacement, Condition.any)
+    def apply(suffix: String, replacement: String): SimpleRule = new SimpleRule(suffix, replacement, Condition.any)
+    
+    def doubleToSingle(condition: Word => Boolean): Rule = word =>  
+      if(Condition.endsDoubleConsonant(word) && condition(word))
+        Some(Word(word.text dropRight 1))
+      else 
+        None
   }
 }

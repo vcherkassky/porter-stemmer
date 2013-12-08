@@ -6,7 +6,7 @@ import org.scalatest.Assertions._
 
 class RuleSpec extends FunSuite with PorterStemmer {
 
-  def checkStem(rule: Rule, word: String, stem: String) = rule.stem(Word(word)) === Some(Word(stem))
+  def checkStem(rule: SimpleRule, word: String, stem: String) = rule.stem(Word(word)) === Some(Word(stem))
   def checkApply(rule: Rule, word: String, stem: String) = rule(Word(word)) === Some(Word(stem))
 
   test("test that result of stem and apply is right [step 1a]") {
@@ -31,8 +31,8 @@ class RuleSpec extends FunSuite with PorterStemmer {
     assert(sses.apply(Word("CONSES")) === None)
   }
 
-  test("test that result of stem and apply is right [step 1b]") {
-    val eed_m_gt_0 = Rule("EED", "EE", Condition.meauseIs(m => m > 0))
+  test("test that result of stem and apply is right [step 1b | first part]") {
+    val eed_m_gt_0 = Rule("EED", "EE", Condition.measureIs(m => m > 0))
     checkStem(eed_m_gt_0, "FEED", "F")
     assert(eed_m_gt_0(Word("FEED")) === None)
 
@@ -48,12 +48,26 @@ class RuleSpec extends FunSuite with PorterStemmer {
 
     checkStem(ed, "BLED", "BL")
     assert(ed(Word("BLED")) === None)
-    
+
     val ing = Rule("ING", "", Condition.containsVowel)
     checkStem(ing, "MOTORING", "MOTOR")
     checkApply(ing, "MOTORING", "MOTOR")
 
     checkStem(ing, "SING", "S")
     assert(ing(Word("SING")) === None)
+  }
+
+  test("test that result of apply is right for complex rules [step 1b | second part]") {
+    val doubleNotLsz = Rule.doubleToSingle(Condition.not(Condition.endCharIn("LSZ")))
+    checkApply(doubleNotLsz, "HOPP", "HOP")
+    checkApply(doubleNotLsz, "TANN", "TAN")
+    assert(doubleNotLsz(Word("FALL")) === None)
+    assert(doubleNotLsz(Word("HISS")) === None)
+    assert(doubleNotLsz(Word("FIZZ")) === None)
+
+    val m_gt_1_o = Rule("", "E", Condition.and(Condition.measureIs(_ == 1), Condition.endsCvcNotWxy))
+    assert(m_gt_1_o(Word("FAIL")) === None)
+    checkStem(m_gt_1_o, "FIL", "FIL")
+    checkApply(m_gt_1_o, "FIL", "FILE")
   }
 }
