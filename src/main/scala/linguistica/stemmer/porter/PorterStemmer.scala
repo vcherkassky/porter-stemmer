@@ -18,20 +18,19 @@ trait PorterStemmer {
   }
 
   object Word {
-    
+
     def apply(word: String): Word = {
       val letters = precompute(word)
       new Word(word, measure(letters.map(_._2)), letters)
     }
-    
+
     def stem(word: Word, suffix: String): Option[Word] = {
       if (word.text.endsWith(suffix)) {
         val letters = word.letters.dropRight(suffix.length)
         val stem = word.text.dropRight(suffix.length)
         Some(new Word(stem, measure(letters.map(_._2)), letters))
       } 
-      else
-        None
+      else None
     }
   }
 
@@ -69,33 +68,46 @@ trait PorterStemmer {
   }
 
   class Rule(suffix: String, replacement: String, condition: Word => Boolean) {
+
     def stem(word: Word): Option[Word] = word.stem(suffix)
-    def apply(word: Word): Option[Word] = stem(word) match {
-      case Some(stem) =>
-        if (condition(stem))
-          if (replacement != null) Some(Word(stem.text + replacement))
-          else Some(stem)
-        else None
-      case None => None
+
+    def apply(word: Word): Option[Word] = stem(word) flatMap { stem =>
+      if (condition(stem))
+        if (replacement != null) Some(Word(stem.text + replacement))
+        else Some(stem)
+      else None
     }
   }
 
   object Condition {
+
     def any(stem: Word): Boolean = true
+
     def endsWith(ending: String)(stem: Word): Boolean = stem.text.endsWith(ending)
+
     def containsVowel(stem: Word): Boolean = stem.letters.exists(_._2 == Vowel)
-    def endsDoubleConsonant(stem: String): Boolean = {
-      if (stem.length() < 2) false
+
+    def endsDoubleConsonant(stem: Word): Boolean = {
+      if (stem.text.length() < 2) false
       else {
-        val end = stem.takeRight(2)
-        end.head == end.tail.head
+        val end = stem.text.takeRight(2)
+        val endIsConsonant = stem.letters.takeRight(1).head._2 == Consonant
+        end.head == end.tail.head && endIsConsonant
       }
     }
+
+    def meauseIs(p: Int => Boolean)(stem: Word): Boolean = p(stem.measure)
+
+    def and(conditions: (Word => Boolean)*)(stem: Word): Boolean = conditions.find(condition => !condition(stem)) == None
+
+    def or(conditions: (Word => Boolean)*)(stem: Word): Boolean = conditions.exists(condition => condition(stem))
   }
 
   object Rule {
+
     def apply(suffix: String, replacement: String, condition: Word => Boolean): Rule =
       new Rule(suffix, replacement, condition)
+
     def apply(suffix: String, replacement: String) = new Rule(suffix, replacement, Condition.any)
   }
 }
