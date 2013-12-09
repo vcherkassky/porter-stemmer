@@ -4,7 +4,7 @@ import org.scalatest._
 import org.scalatest.matchers._
 import org.scalatest.Assertions._
 
-class RuleSpec extends FunSuite with PorterStemmer {
+class RuleSpec extends FunSuite with Logic {
 
   def checkStem(rule: SimpleRule, word: String, stem: String) = rule.stem(Word(word)) === Some(Word(stem))
   def checkApply(rule: Rule, word: String, stem: String) = rule(Word(word)) === Some(Word(stem))

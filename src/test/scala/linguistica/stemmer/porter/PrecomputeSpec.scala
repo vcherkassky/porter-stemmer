@@ -4,7 +4,7 @@ import org.scalatest._
 import org.scalatest.matchers._
 import org.scalatest.Assertions._
 
-class PrecomputeSpec extends FunSuite with PorterStemmer {
+class PrecomputeSpec extends FunSuite with Logic {
 
   import LetterType._
 

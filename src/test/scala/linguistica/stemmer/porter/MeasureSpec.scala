@@ -4,7 +4,7 @@ import org.scalatest._
 import org.scalatest.matchers._
 import org.scalatest.Assertions._
 
-class MeasureSpec extends FunSuite with PorterStemmer {
+class MeasureSpec extends FunSuite with Logic {
 
   test("test that result of Word() should be 0") {
     assert(Word("TR").measure === 0)

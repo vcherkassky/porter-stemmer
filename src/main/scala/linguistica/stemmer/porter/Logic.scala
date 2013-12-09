@@ -5,7 +5,7 @@ import scala.collection.immutable.StringOps
 /**
  * Note: Any word will be processed in UPPERCASE
  */
-trait PorterStemmer {
+trait Logic {
 
   object LetterType extends Enumeration {
     type LetterType = Value
@@ -35,7 +35,7 @@ trait PorterStemmer {
     private def precompute(word: String): List[(Char, LetterType)] = {
       var prev: Char = '0'
       var result = List[(Char, LetterType)]()
-      for (cur <- word) {
+      for (cur <- word) yield {
         val pair = cur match {
           case 'A' | 'O' | 'U' | 'I' | 'E' => (cur, Vowel)
           case 'Y' => prev match {
@@ -57,7 +57,7 @@ trait PorterStemmer {
     private def measure(letters: Seq[LetterType]): Int = {
       var prev = letters.head
       var m = 0
-      for (cur <- letters.tail) {
+      for (cur <- letters.tail) yield {
         if (prev == Vowel && cur == Consonant)
           m = m + 1
         prev = cur
