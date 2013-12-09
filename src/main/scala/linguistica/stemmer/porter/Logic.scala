@@ -7,16 +7,19 @@ import scala.collection.immutable.StringOps
  */
 trait Logic {
 
+  //TODO: apply snowball optimization http://snowball.tartarus.org/algorithms/porter/stemmer.html
   object LetterType extends Enumeration {
     type LetterType = Value
     val Vowel, Consonant = Value
   }
   import LetterType._
 
+  
   case class Word(val text: String, val measure: Int, val letters: List[(Char, LetterType)]) {
     def stem(suffix: String): Option[Word] = Word.stem(this, suffix)
   }
 
+  
   object Word {
 
     def apply(word: String): Word = {
@@ -66,13 +69,15 @@ trait Logic {
     }
   }
 
+  
   type Rule = Function[Word, Option[Word]]
 
-  case class SimpleRule(suffix: String, replacement: String, condition: Word => Boolean) extends Rule {
-    
-    if(suffix.exists(Character.isLowerCase))
+  case class SimpleRule(suffix: String, replacement: String, condition: Word => Boolean)
+    extends Rule {
+
+    if (suffix.exists(Character.isLowerCase))
       throw new IllegalArgumentException(s"suffix should be uppercase, but was $suffix")
-    if(replacement.exists(Character.isLowerCase))
+    if (replacement.exists(Character.isLowerCase))
       throw new IllegalArgumentException(s"replacement should be uppercase, but was $replacement")
 
     def stem(word: Word): Option[Word] = word.stem(suffix)
@@ -85,6 +90,7 @@ trait Logic {
     }
   }
 
+  
   object Condition {
 
     def any(stem: Word): Boolean = true
@@ -117,19 +123,23 @@ trait Logic {
 
     def measureIs(p: Int => Boolean)(stem: Word): Boolean = p(stem.measure)
 
-    @inline def and(conditions: (Word => Boolean)*)(stem: Word): Boolean = conditions.find(condition => !condition(stem)) == None
+    @inline def and(conditions: (Word => Boolean)*)(stem: Word): Boolean =
+      conditions.find(condition => !condition(stem)) == None
 
-    @inline def or(conditions: (Word => Boolean)*)(stem: Word): Boolean = conditions.exists(condition => condition(stem))
+    @inline def or(conditions: (Word => Boolean)*)(stem: Word): Boolean =
+      conditions.exists(condition => condition(stem))
 
     @inline def not(condition: Word => Boolean)(stem: Word): Boolean = !condition(stem)
   }
 
+  
   object Rule {
 
     def apply(suffix: String, replacement: String, condition: Word => Boolean): SimpleRule =
       new SimpleRule(suffix, replacement, condition)
 
-    def apply(suffix: String, replacement: String): SimpleRule = new SimpleRule(suffix, replacement, Condition.any)
+    def apply(suffix: String, replacement: String): SimpleRule =
+      new SimpleRule(suffix, replacement, Condition.any)
 
     def doubleToSingle(condition: Word => Boolean): Rule = word =>
       if (Condition.endsDoubleConsonant(word) && condition(word))

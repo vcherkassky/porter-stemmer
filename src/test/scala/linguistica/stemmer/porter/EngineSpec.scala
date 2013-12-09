@@ -3,15 +3,16 @@ package linguistica.stemmer.porter
 import org.scalatest._
 import org.scalatest.matchers._
 import org.scalatest.Assertions._
+import StemmerEngine._
 
-class EngineSpec extends FunSuite with StemmerEngine {
+class EngineSpec extends FunSuite {
 
-  test("test that step1b returns right stem") {
+  test("test that step1b returns the right stem") {
     def applyStep1b(word: String): String = {
       val w = Word(word)
-      val result = applyRules(w, step1b_complex_first) match {
+      val result = applyRules(w, Steps.step1b_complex_first) match {
         case None => w
-        case Some(wrd) => applyStep(wrd, step1b_complex_second)
+        case Some(wrd) => applyStep(wrd, Steps.step1b_complex_second)
       }
       result.text
     }

@@ -1,6 +1,6 @@
 package linguistica.stemmer.porter
 
-object Test extends StemmerEngine {
+object Test {
 
   def main(args: Array[String]): Unit = {
     val text: String = """The Unix operating system was conceived and implemented in 1969 at AT&T's 
@@ -16,12 +16,12 @@ object Test extends StemmerEngine {
     println(text.split("\\s|\\p{Punct}").filterNot(_.isEmpty).toList)
     
     val stems = text.split("\\s|\\p{Punct}").filterNot(_.isEmpty)
-      .map(word => stem(word.toUpperCase())).mkString(" ")
+      .map(word => StemmerEngine.stem(word)).mkString(" ")
 
     println(stems)
     
     val initially = "INITIALLY"
-    val initi = stem(initially)
+    val initi = StemmerEngine.stem(initially)
     println(s"$initially -> $initi")
   }
 }
